@@ -78,12 +78,14 @@ curl -s https://api.ukamnads.icu/api/v2/vstock/ticker/1932862336
 | --- | --- | --- |
 | 1 | Buy long (`buy_long`) | ✅ verified |
 | 2 | Sell long / close long (`sell_long`) | ✅ verified |
-| 3 | Open short (`sell_short`) | inferred from enum order + ledger wording, untested |
-| 4 | Close short (`buy_short`) | inferred, untested |
+| 3 | Open short (`sell_short`) | ✅ verified |
+| 4 | Close short (`buy_short`) | ✅ verified |
 
 It is a **market order**: it fills immediately at the vAMM price and returns
 `{executionPrice, grossAmount, feeAmount, realizedPnl, priceAfter, cashBalanceAfter}`.
-Fees observed live: **0.2%** on buys; a sell within 12 hours of acquisition is charged **1.0%** total.
+Fees observed live: **0.2%** on buys and on short opens; a sell or short close within 12 hours of opening is charged **1.0%** total.
+Short positions lock margin of **150%** of notional (released in full on close), and the API rejects shorting a ticker you currently hold long:
+`400` — holding a long position in this ticker, shorting is forbidden until the long is closed.
 There is no order book and no cancel step — check `GET /api/v2/vstock/ticker/{uid}` (price, `pbRatio`) and your `portfolio` before sending a trade.
 
 Two write endpoints deserve explicit caution:
@@ -342,6 +344,7 @@ Status key: ✅ 200 = called successfully during the November 2026 verification 
 - **204** on `GET /api/v2/core-runtime/heartbeat` and **400** on `GET /api/v2/core-runtime/ws`: node-runtime probe / WebSocket upgrade endpoints, not plain REST reads.
 - **403** on `GET /api/v2/wiki/governance/accounts/{accountId}`: moderator-only data; the permission check works as intended.
 - **Platform parameter**: wiki/lineage endpoints expect `platform` to be one of `bilibili / acfun / youtube / twitch / douyin`.
+- **State-changing GETs**: `GET /api/v2/account/add-record` and `GET /api/v2/account/del-record` mutate the recording list despite being GETs. Exclude them from any automated read-only sweep.
 
 ## Key response shapes (observed)
 
