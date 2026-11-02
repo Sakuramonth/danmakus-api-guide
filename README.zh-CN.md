@@ -75,10 +75,10 @@ curl -s https://api.ukamnads.icu/api/v2/vstock/ticker/1932862336
 | --- | --- | --- |
 | 1 | 买入做多（buy_long） | ✅ 已实测 |
 | 2 | 卖出平多（sell_long） | ✅ 已实测 |
-| 3 | 开空（sell_short） | 按枚举顺序与流水注记推断，未实测 |
-| 4 | 平空（buy_short） | 推断，未实测 |
+| 3 | 开空（sell_short） | ✅ 已实测 |
+| 4 | 平空（buy_short） | ✅ 已实测 |
 
-该接口是**市价单**：提交即按 vAMM 价格成交，返回 `{executionPrice, grossAmount, feeAmount, realizedPnl, priceAfter, cashBalanceAfter}`。实测费率：买入 **0.2%**；买入未满 12 小时卖出，总费率 **1.0%**。没有挂单与撤单步骤，下单前请先用 `GET /api/v2/vstock/ticker/{uid}` 核对现价与 `pbRatio`、用 `portfolio` 核对现金与持仓。
+该接口是**市价单**：提交即按 vAMM 价格成交，返回 `{executionPrice, grossAmount, feeAmount, realizedPnl, priceAfter, cashBalanceAfter}`。实测费率：买入与开空均为 **0.2%**；未满 12 小时卖出平多或平空，总费率 **1.0%**。开空会锁定名义值 **150%** 的保证金（平空后全额释放）；同一标的持有多头时禁止开空，接口返回 400 并明确提示须先卖出平多。没有挂单与撤单步骤，下单前请先用 `GET /api/v2/vstock/ticker/{uid}` 核对现价与 `pbRatio`、用 `portfolio` 核对现金与持仓。
 
 两个写接口请特别谨慎：
 
@@ -335,6 +335,7 @@ curl -s https://api.ukamnads.icu/api/v2/vstock/ticker/1932862336
 - **204 / 400**：`GET /api/v2/core-runtime/heartbeat` 返回 204（节点探针语义）；`GET /api/v2/core-runtime/ws` 是 WebSocket 升级端点，普通 GET 返回 400 属预期。
 - **403**：`GET /api/v2/wiki/governance/accounts/{accountId}` 仅百科版主可看，权限校验正常生效。
 - **平台参数**：wiki/lineage 一组接口的 `platform` 仅限 `bilibili / acfun / youtube / twitch / douyin`。
+- **带副作用的 GET**：`GET /api/v2/account/add-record` 与 `GET /api/v2/account/del-record` 虽然是 GET，却会真实增删录制名单，任何只读盘点都要把它们当写接口排除。
 
 ## 关键返回结构速查（实测归纳）
 
